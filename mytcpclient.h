@@ -6,6 +6,15 @@
 #include <QTimer>
 #include <QHostAddress>
 #include <QDateTime>
+#include <QStandardPaths>
+#include <QDataStream>
+#include <QFile>
+#include <QDir>
+#include <QBuffer>
+#include <QEventLoop>
+#include <QTimer>
+#include <QApplication>
+
 
 
 class myTcpClient : public QObject
@@ -15,6 +24,14 @@ public:
     explicit myTcpClient(QObject *parent = nullptr);
     void connectToServer(const QString &host,quint16 port);
     void sendMessage(const QString &message);
+
+    inline void lightPause()
+    {
+        QEventLoop loop;
+        QTimer::singleShot(1, &loop, &QEventLoop::quit);
+        loop.exec();
+        QApplication::processEvents();  // Keep UI healthy
+    }
 
 signals:
     void guiData(const QString& dataGui);

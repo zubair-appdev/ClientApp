@@ -33,5 +33,9 @@ private:
     Ui::MainWindow *ui;
 
     myTcpClient *myClient;
+
+    bool clientConnected;
+
+    int port;
 };
 #endif // MAINWINDOW_H

@@ -45,13 +45,94 @@ void myTcpClient::onConnected()
 }
 
 
+
 void myTcpClient::onServerMessage()
 {
-    QByteArray message = mySocket->readAll();
-    qDebug()<<"Message From Server "<<message;
-    emit guiData(message);
-    QString nowTime = QDateTime::currentDateTime().toString("[hh:mm:ss:zzz dd/MM/yyyy]");
-    mySocket->write("Client Received Your Message ! "+nowTime.toUtf8());
+    static QFile *file = nullptr;
+    static QByteArray buffer;
+    const QByteArray endMarker = "###_FILE_DONE_###";
+    static QString globalFileSize;
+    static quint64 bytesWritten;
+    static quint64 loadCounter = 0;
+
+    QByteArray data = mySocket->readAll();
+    buffer.append(data);
+
+
+    // If it's a normal server message
+    if (buffer.startsWith("*Server Message*")) {
+        qDebug() << "Message From Server " << buffer;
+        emit guiData(QString::fromUtf8(buffer));
+
+        QString nowTime = QDateTime::currentDateTime().toString("[hh:mm:ss:zzz dd/MM/yyyy]");
+        mySocket->write("Client Received Your Message ! " + nowTime.toUtf8());
+
+        buffer.clear();
+        return;
+    }
+
+    // Check for header
+    if (!file && buffer.startsWith("FILE_*_"))
+    {
+        int headerEnd = buffer.indexOf("!!#!!");
+        if (headerEnd != -1) {
+            QByteArray headerBytes = buffer.left(headerEnd);
+            buffer.remove(0, headerEnd + 5); // drop header part
+
+            QString header = QString::fromUtf8(headerBytes);
+            QList<QString> parts = header.split("_*_");
+            QString fileName = parts[1];
+            QString fileSize = parts[2];
+            globalFileSize = fileSize;
+
+            emit guiData("Receiving file : "+fileName+" with size (bytes) "+fileSize);
+
+            file = new QFile(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation) + "/" + fileName);
+            if (!file->open(QIODevice::WriteOnly)) {
+                delete file;
+                file = nullptr;
+                buffer.clear();
+                return;
+            }
+        }
+    }
+
+    // If end marker found
+    int markerIndex = buffer.indexOf(endMarker);
+
+    if (markerIndex != -1)
+    {
+        if (file) {
+            file->write(buffer.left(markerIndex));  // write everything before marker
+            file->flush();
+            file->close();
+            delete file;
+            file = nullptr;
+            bytesWritten = 0;
+        }
+        emit guiData("DATA_SIZE :  File Completely Received!");
+        emit guiData("File completely received!");
+
+        buffer.clear(); // reset for next transfer
+    }
+    else
+    {
+        // Write intermediate chunks
+        if (file) {
+            loadCounter++;
+            file->write(buffer);
+            bytesWritten+=buffer.size();
+            buffer.clear(); // keep buffer clean, only hold partial data
+            if(loadCounter % 500 == 0)
+            {
+                emit guiData("DATA_SIZE : "+QString::number(bytesWritten)+" / "+globalFileSize);
+            }
+        }
+    }
 }
+
+
+
+
 
 

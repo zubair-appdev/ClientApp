@@ -29,6 +29,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->lineEdit_ipAddr->setValidator(ipValidator);
     ui->lineEdit_ipAddr->setPlaceholderText("127.0.0.1");
 
+    clientConnected = false;
+
 
 }
 
@@ -44,6 +46,10 @@ void MainWindow::recvGuiData(const QString &recvData)
     {
         // Display the message in red color
         ui->textEdit_client->append("<span style='color: red;'>" + recvData + "</span>");
+    }
+    else if(recvData.startsWith("DATA_SIZE"))
+    {
+        ui->label_Status->setText(recvData);
     }
     else
     {
@@ -61,21 +67,31 @@ void MainWindow::on_pushButton_send_clicked()
 
 void MainWindow::on_pushButton_connect_clicked()
 {
-    QString ipAddress = ui->lineEdit_ipAddr->text().trimmed();
-    quint16 port = static_cast<quint16>(ui->spinBox_port->value());
+    if(clientConnected == false)
+    {
+        clientConnected = true;
+        QString ipAddress = ui->lineEdit_ipAddr->text().trimmed();
+        quint16 port = static_cast<quint16>(ui->spinBox_port->value());
+        this->port = port;
 
-    // Check if IP address or port is in default state
-    if (ipAddress.isEmpty() && port == 1024) {
-        ipAddress = "127.0.0.1";  // Default to loopback
-        port = 1234;             // Default port
-        QMessageBox::information(this, "Default Connection",
-                                 "IP and port not set. Connecting to default:\n"
-                                 "IP: 127.0.0.1\nPort: 1234");
+        // Check if IP address or port is in default state
+        if (ipAddress.isEmpty() && port == 1024) {
+            ipAddress = "127.0.0.1";  // Default to loopback
+            port = 1024;             // Default port
+            QMessageBox::information(this, "Default Connection",
+                                     "IP and port not set. Connecting to default:\n"
+                                     "IP: 127.0.0.1\nPort: 1024");
+        }
+
+
+        // Attempt to connect to the server
+        myClient->connectToServer(ipAddress, port);
     }
-
-
-    // Attempt to connect to the server
-    myClient->connectToServer(ipAddress, port);
+    else
+    {
+        QMessageBox::information(this,"Already Connected","Client is already connected to port "
+                                 +QString::number(port) + " .Please restart application to connect new port");
+    }
 
 }
 
