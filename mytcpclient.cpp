@@ -50,17 +50,18 @@ void myTcpClient::onServerMessage()
 {
     static QFile *file = nullptr;
     static QByteArray buffer;
-    const QByteArray endMarker = "###_FILE_DONE_###";
     static QString globalFileSize;
     static quint64 bytesWritten;
     static quint64 loadCounter = 0;
+    static QString savedFilePath;
 
     QByteArray data = mySocket->readAll();
     buffer.append(data);
 
 
     // If it's a normal server message
-    if (buffer.startsWith("*Server Message*")) {
+    if (buffer.startsWith("*Server Message*"))
+    {
         qDebug() << "Message From Server " << buffer;
         emit guiData(QString::fromUtf8(buffer));
 
@@ -87,7 +88,9 @@ void myTcpClient::onServerMessage()
 
             emit guiData("Receiving file : "+fileName+" with size (bytes) "+fileSize);
 
-            file = new QFile(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation) + "/" + fileName);
+            savedFilePath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation) + "/" + fileName;
+            file = new QFile(savedFilePath);
+
             if (!file->open(QIODevice::WriteOnly)) {
                 delete file;
                 file = nullptr;
@@ -97,36 +100,35 @@ void myTcpClient::onServerMessage()
         }
     }
 
-    // If end marker found
-    int markerIndex = buffer.indexOf(endMarker);
 
-    if (markerIndex != -1)
+    if (file)
     {
-        if (file) {
-            file->write(buffer.left(markerIndex));  // write everything before marker
+        loadCounter++;
+        file->write(buffer);
+        bytesWritten+=buffer.size();
+
+        if (bytesWritten == globalFileSize.toULongLong())
+        {
+
             file->flush();
             file->close();
             delete file;
             file = nullptr;
             bytesWritten = 0;
-        }
-        emit guiData("DATA_SIZE :  File Completely Received!");
-        emit guiData("File completely received!");
 
-        buffer.clear(); // reset for next transfer
-    }
-    else
-    {
-        // Write intermediate chunks
-        if (file) {
-            loadCounter++;
-            file->write(buffer);
-            bytesWritten+=buffer.size();
-            buffer.clear(); // keep buffer clean, only hold partial data
-            if(loadCounter % 500 == 0)
-            {
-                emit guiData("DATA_SIZE : "+QString::number(bytesWritten)+" / "+globalFileSize);
-            }
+            emit guiData("DATA_SIZE : File Completely Received!");
+            emit guiData("File completely received!");
+            emit guiData("Saved at: " + savedFilePath);
+
+            buffer.clear(); // reset for next transfer
+            return;
+        }
+
+        buffer.clear(); // keep buffer clean, only hold partial data
+
+        if(loadCounter % 500 == 0)
+        {
+            emit guiData("DATA_SIZE : "+QString::number(bytesWritten)+" / "+globalFileSize);
         }
     }
 }

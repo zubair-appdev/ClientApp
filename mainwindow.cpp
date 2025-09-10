@@ -53,8 +53,14 @@ void MainWindow::recvGuiData(const QString &recvData)
     }
     else
     {
-        ui->textEdit_client->append(recvData);
+        ui->textEdit_client->append("<span style='color: black;'>" + recvData + "</span>");
     }
+
+    // Always scroll to bottom
+    QTextCursor cursor = ui->textEdit_client->textCursor();
+    cursor.movePosition(QTextCursor::End);
+    ui->textEdit_client->setTextCursor(cursor);
+    ui->textEdit_client->ensureCursorVisible();
 }
 
 void MainWindow::on_pushButton_send_clicked()
