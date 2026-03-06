@@ -8,8 +8,8 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
 
     // Uncomment below block if you need to see each and every event Qt Produces
-    //    EventSpy *spy = new EventSpy();
-    //    a.installEventFilter(spy);
+    //    EventSpy spy;
+    //    a.installEventFilter(&spy);
 
     MainWindow w;
     w.show();

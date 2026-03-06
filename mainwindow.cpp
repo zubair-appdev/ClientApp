@@ -73,8 +73,6 @@ void MainWindow::checkFoodCollision()
                         QString("@@@ATE@@@_%1").arg(id)
                         );
 
-            lightPause(20);
-
             return;
         }
     }
@@ -336,6 +334,8 @@ void MainWindow::recvGuiData(const QString &recvData)
 
             eatables.clear();
         }
+
+        resetThings();
     }
     else if(recvData.startsWith("*Server Message*"))
     {
