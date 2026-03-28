@@ -184,17 +184,17 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 void MainWindow::recvGuiData(const QString &recvData)
 {
     // 🔥 Handle merged packets first
-        if(recvData.count("*Server Message*: ") > 1)
-        {
-            qDebug()<<"Recursion Hits : ";
-            QStringList packets = recvData.split("*Server Message*: ", Qt::SkipEmptyParts);
+    if(recvData.count("*Server Message*: ") > 1)
+    {
+        qDebug()<<"Recursion Hits : ";
+        QStringList packets = recvData.split("*Server Message*: ", Qt::SkipEmptyParts);
 
-            for(const QString &p : packets)
-            {
-                recvGuiData("*Server Message*: " + p);   // reprocess each packet
-            }
-            return;
+        for(const QString &p : packets)
+        {
+            recvGuiData("*Server Message*: " + p);   // reprocess each packet
         }
+        return;
+    }
 
     if(recvData.contains("@@@MOVE_SERVER@@@"))
     {
@@ -337,6 +337,127 @@ void MainWindow::recvGuiData(const QString &recvData)
 
         resetThings();
     }
+    //PTP Code Start
+    else if(recvData.contains("@@@SYNC@@@"))
+    {
+        QStringList parts = recvData.split("_");
+
+        t1 = parts[1].toLongLong();
+
+        t2 = now_us();
+
+        qDebug()
+                << "SYNC received"
+                << "t1:" << t1
+                << "t2:" << t2;
+
+        // IMPORTANT — store t3
+        t3 = now_us();
+
+        QString msg =
+                QString("@@@DELAY_REQ@@@_%1")
+                .arg(t3);
+
+        myClient->sendMessage(msg);
+    }
+    else if(recvData.contains("@@@DELAY_RESP@@@"))
+    {
+        QString data = recvData;
+
+        // Remove server prefix
+        data.replace("*Server Message*: ", "");
+
+        QStringList parts = data.split("_");
+
+        if(parts.size() < 3)
+            return;
+
+        // Capture t4
+        t4 = parts[2].toLongLong();
+
+        // =========================
+        // CALCULATE OFFSET & DELAY
+        // =========================
+
+        qint64 offset =
+                ((t2 - t1) -
+                 (t4 - t3)) / 2;
+
+        qint64 delay =
+                ((t2 - t1) +
+                 (t4 - t3)) / 2;
+
+        // =========================
+        // CURRENT MEASUREMENT TIME
+        // =========================
+
+        QString now =
+            QDateTime::currentDateTime()
+            .toString("hh:mm:ss.zzz");
+
+        // =========================
+        // BUILD MESSAGE
+        // =========================
+
+        QString msg;
+
+        msg += "[" + now + "]\n";
+
+        msg += "==============================\n";
+
+        msg += QString(
+               "t1 (Master send time)      : %1 us\n")
+               .arg(t1);
+
+        msg += QString(
+               "t2 (Client receive time)   : %1 us\n")
+               .arg(t2);
+
+        msg += QString(
+               "t3 (Client send request)   : %1 us\n")
+               .arg(t3);
+
+        msg += QString(
+               "t4 (Master receive time)   : %1 us\n")
+               .arg(t4);
+
+        msg += "\n";
+
+        msg += QString(
+               "Offset (Clock difference)  : %1 us")
+               .arg(offset);
+
+        msg += QString(
+               "  (%1 ms)\n")
+               .arg(offset / 1000.0, 0, 'f', 3);
+
+        msg += QString(
+               "Delay (Network latency)    : %1 us")
+               .arg(delay);
+
+        msg += QString(
+               "  (%1 ms)\n")
+               .arg(delay / 1000.0, 0, 'f', 3);
+
+        msg += "==============================\n";
+
+        // =========================
+        // DISPLAY IN UI
+        // =========================
+
+        ui->plainTextEdit_ptp->appendPlainText(msg);
+
+        // =========================
+        // AUTO SCROLL
+        // =========================
+
+        QTextCursor cursor =
+                ui->plainTextEdit_ptp->textCursor();
+
+        cursor.movePosition(QTextCursor::End);
+
+    }
+    //PTP Code End
     else if(recvData.startsWith("*Server Message*"))
     {
         // Display the message in red color
@@ -445,3 +566,15 @@ void MainWindow::on_actionSync_720p_triggered()
 {
     this->setFixedSize(1280,720);
 }
+
+void MainWindow::on_actionPtp_page_triggered()
+{
+    ui->stackedWidget->setCurrentWidget(ui->page_ptp);
+}
+
+void MainWindow::on_pushButton_back_ptp_clicked()
+{
+    ui->plainTextEdit_ptp->clear();
+    ui->stackedWidget->setCurrentWidget(ui->page_main);
+}
+

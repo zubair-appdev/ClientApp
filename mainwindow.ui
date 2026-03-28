@@ -27,7 +27,7 @@
        <string notr="true"/>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="page_main">
        <layout class="QGridLayout" name="gridLayout">
@@ -381,6 +381,32 @@ border-bottom-left-radius:15px;</string>
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="page_ptp">
+       <layout class="QGridLayout" name="gridLayout_4">
+        <item row="1" column="0">
+         <widget class="QPushButton" name="pushButton_back_ptp">
+          <property name="font">
+           <font>
+            <pointsize>11</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>Back</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QPlainTextEdit" name="plainTextEdit_ptp">
+          <property name="font">
+           <font>
+            <family>Nirmala UI Semilight</family>
+            <pointsize>12</pointsize>
+           </font>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -401,7 +427,14 @@ border-bottom-left-radius:15px;</string>
     <addaction name="actionPlay_Game"/>
     <addaction name="actionSync_720p"/>
    </widget>
+   <widget class="QMenu" name="menuPTP">
+    <property name="title">
+     <string>PTP</string>
+    </property>
+    <addaction name="actionPtp_page"/>
+   </widget>
    <addaction name="menuGame_Mode"/>
+   <addaction name="menuPTP"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionPlay_Game">
@@ -412,6 +445,11 @@ border-bottom-left-radius:15px;</string>
   <action name="actionSync_720p">
    <property name="text">
     <string>Sync 720p</string>
+   </property>
+  </action>
+  <action name="actionPtp_page">
+   <property name="text">
+    <string>PTP page</string>
    </property>
   </action>
  </widget>

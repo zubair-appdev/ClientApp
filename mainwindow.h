@@ -17,6 +17,8 @@
 #include <QMediaPlaylist>
 #include <QSoundEffect>
 
+#include <chrono>
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -28,6 +30,18 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+
+    //PTP IEEE 1588 Code
+    static qint64 now_us()
+    {
+        auto now =
+            std::chrono::high_resolution_clock::now();
+
+        return std::chrono::duration_cast
+        <
+            std::chrono::microseconds
+        >(now.time_since_epoch()).count();
+    }
 
     void checkFoodCollision();
 
@@ -64,6 +78,10 @@ private slots:
 
     void on_actionSync_720p_triggered();
 
+    void on_actionPtp_page_triggered();
+
+    void on_pushButton_back_ptp_clicked();
+
 private:
     Ui::MainWindow *ui;
 
@@ -82,6 +100,11 @@ private:
     QMediaPlayer *bgMusic;
     QMediaPlaylist *playlist;
     QSoundEffect *eatSound;
+
+    qint64 t1 = 0;
+    qint64 t2 = 0;
+    qint64 t3 = 0;
+    qint64 t4 = 0;
 
 };
 #endif // MAINWINDOW_H
