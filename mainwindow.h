@@ -58,6 +58,13 @@ public:
     void resetThings();
 
     void initializeMusic();
+    
+    void checkSpecialCollision();
+
+    void drawLaser(
+        int direction,
+        bool isClient
+    );
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
@@ -82,6 +89,8 @@ private slots:
 
     void on_pushButton_back_ptp_clicked();
 
+    void on_actionHelp_triggered();
+
 private:
     Ui::MainWindow *ui;
 
@@ -100,11 +109,37 @@ private:
     QMediaPlayer *bgMusic;
     QMediaPlaylist *playlist;
     QSoundEffect *eatSound;
+    QSoundEffect *laserSound;
 
     qint64 t1 = 0;
     qint64 t2 = 0;
     qint64 t3 = 0;
     qint64 t4 = 0;
+
+    QVector<QLabel*> specialBalls;
+    int bulletCount = 0;
+    int myLocalBullets = 0;
+
+    enum Direction
+    {
+        RIGHT = 0,
+        LEFT,
+        UP,
+        DOWN
+    };
+
+    int lastDirection = RIGHT;
+
+    bool boostInitialized = false;
+
+    int boostSteps = 0;          // client's own boosts
+    int serverBoostSteps = 0;    // display only
+
+    int normalStep = 0;      // default movement
+    int boostStep = 0;      // boosted movement
+    bool useBoost = false;   // next move uses boost
+
+
 
 };
 #endif // MAINWINDOW_H
